@@ -1,0 +1,1 @@
+export type DrawingMode = "point" | "line" | "polygon" | null;

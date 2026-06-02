@@ -26,6 +26,12 @@ export type FeatureUI = {
 
 /* ---------------- CORE MODEL ---------------- */
 export interface FeatureProperties {
+    name?: string;
+  wijk?: string;
+  gemeente?: string;
+
+  assignedUser?: string | null;
+  status?: string;
   melder?: string;
   address?: string;
   date?: string;

@@ -15,8 +15,9 @@ import type { LayerState } from "../../types/layers";
 import MapLogic from "./MapLogic";
 import { useGISStore } from "../../store/useGISStore";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { loadNeighborhoodFeatures } from "../../utils/loadNeighborhoodFeatures";
+import type { GISFeature } from "../../types/feature";
 
 /* ---------------- BASEMAPS ---------------- */
 
@@ -70,25 +71,22 @@ export default function MapView({
   const { features, addFeature, updateFeature, deleteFeature } =
     useFeatureStorage();
 
+  const [neighborhoodFeatures, setNeighborhoodFeatures] = useState<
+    GISFeature[]
+  >([]);
+
   useEffect(() => {
     async function loadNeighborhoods() {
       try {
-        const neighborhoodFeatures = await loadNeighborhoodFeatures();
-
-        const existingIds = new Set(features.map((feature) => feature.id));
-
-        neighborhoodFeatures.forEach((feature) => {
-          if (!existingIds.has(feature.id)) {
-            addFeature(feature);
-          }
-        });
+        const loaded = await loadNeighborhoodFeatures();
+        setNeighborhoodFeatures(loaded);
       } catch (error) {
         console.error("Failed to load neighborhoods:", error);
       }
     }
 
     loadNeighborhoods();
-  }, [features, addFeature]);
+  }, []);
 
   const gisLayers = useGISStore((s) => s.layers);
 
@@ -163,7 +161,7 @@ export default function MapView({
 
       {/* GIS LOGIC */}
       <MapLogic
-        features={features}
+        features={[...features, ...neighborhoodFeatures]}
         addFeature={addFeature}
         updateFeature={updateFeature}
         deleteFeature={deleteFeature}

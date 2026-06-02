@@ -208,7 +208,18 @@ export default function MapLogic({
         features={features}
         onFeatureClick={(feature) => {
           setSelectedFeatureId(feature.id as string);
-          setIsFormOpen(true);
+
+          if (feature.layerId === "drawings") {
+            setIsFormOpen(true);
+          }
+
+          if (feature.layerId === "neighborhoods") {
+            console.log(
+              "Clicked neighborhood:",
+              (feature.properties as any).name,
+            );
+            setIsFormOpen(false);
+          }
         }}
       />
 

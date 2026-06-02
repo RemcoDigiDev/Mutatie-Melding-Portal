@@ -123,12 +123,14 @@ function getValidFeatures(features: GISFeature[]): GISFeature[] {
 
 /* ---------------- COMPONENT ---------------- */
 export default function FeatureLayer({ features, onFeatureClick }: Props) {
+  const layers = useGISStore((s) => s.layers);
+  const selectedFeatureId = useGISStore((s) => s.selectedFeatureId);
+
   const layerOrder = {
     neighborhoods: 1,
     drawings: 10,
   };
 
-  const layers = useGISStore((s) => s.layers);
   const validFeatures = getValidFeatures(features)
     .filter((feature) => {
       return layers[feature.layerId]?.visible ?? true;
@@ -151,17 +153,27 @@ export default function FeatureLayer({ features, onFeatureClick }: Props) {
             /* POINTS */
             pointToLayer={(_geoJson, latlng) => {
               const style = getFeatureStyle(feature);
+              const isSelected = feature.id === selectedFeatureId;
 
               return L.circleMarker(latlng, {
-                radius: 8,
-                weight: style.weight,
+                radius: isSelected ? 11 : 8,
+                weight: isSelected ? 4 : style.weight,
                 color: style.color,
                 fillColor: style.fillColor,
                 fillOpacity: 0.9,
               });
             }}
             /* LINES + POLYGONS */
-            style={() => getFeatureStyle(feature)}
+            style={() => {
+              const baseStyle = getFeatureStyle(feature);
+              const isSelected = feature.id === selectedFeatureId;
+
+              return {
+                ...baseStyle,
+                weight: isSelected ? 5 : baseStyle.weight,
+                fillOpacity: isSelected ? 0.45 : baseStyle.fillOpacity,
+              };
+            }}
             eventHandlers={{
               click: () => onFeatureClick?.(feature),
             }}

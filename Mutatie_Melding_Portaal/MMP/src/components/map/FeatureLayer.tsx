@@ -8,7 +8,7 @@ import { useGISStore } from "../../store/useGISStore";
 
 type Props = {
   features: GISFeature[];
-  onFeatureClick?: (feature: GISFeature) => void;
+  onFeatureClick?: (feature: GISFeature, event: L.LeafletMouseEvent) => void;
 };
 
 /* ---------------- PRIORITY COLOR ---------------- */
@@ -124,7 +124,7 @@ function getValidFeatures(features: GISFeature[]): GISFeature[] {
 /* ---------------- COMPONENT ---------------- */
 export default function FeatureLayer({ features, onFeatureClick }: Props) {
   const layers = useGISStore((s) => s.layers);
-  const selectedFeatureId = useGISStore((s) => s.selectedFeatureId);
+  const selectedFeatureIds = useGISStore((s) => s.selectedFeatureIds);
 
   const layerOrder = {
     neighborhoods: 1,
@@ -153,7 +153,7 @@ export default function FeatureLayer({ features, onFeatureClick }: Props) {
             /* POINTS */
             pointToLayer={(_geoJson, latlng) => {
               const style = getFeatureStyle(feature);
-              const isSelected = feature.id === selectedFeatureId;
+              const isSelected = selectedFeatureIds.includes(feature.id);
 
               return L.circleMarker(latlng, {
                 radius: isSelected ? 11 : 8,
@@ -166,7 +166,7 @@ export default function FeatureLayer({ features, onFeatureClick }: Props) {
             /* LINES + POLYGONS */
             style={() => {
               const baseStyle = getFeatureStyle(feature);
-              const isSelected = feature.id === selectedFeatureId;
+              const isSelected = selectedFeatureIds.includes(feature.id);
 
               return {
                 ...baseStyle,
@@ -175,7 +175,7 @@ export default function FeatureLayer({ features, onFeatureClick }: Props) {
               };
             }}
             eventHandlers={{
-              click: () => onFeatureClick?.(feature),
+              click: (event) => onFeatureClick?.(feature, event),
             }}
           />
         );

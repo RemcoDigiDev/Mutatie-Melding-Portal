@@ -71,6 +71,10 @@ export default function MapLogic({
   // This keeps the newly created feature available for FeatureForm.
   const [localSelectedFeature, setLocalSelectedFeature] =
     useState<GISFeature | null>(null);
+  const selectedFeatureIds = useGISStore((s) => s.selectedFeatureIds);
+  const addSelectedFeatureId = useGISStore((s) => s.addSelectedFeatureId);
+  const removeSelectedFeatureId = useGISStore((s) => s.removeSelectedFeatureId);
+  const clearSelection = useGISStore((s) => s.clearSelection);
 
   /* ---------------- GEOMETRY CENTER ---------------- */
 
@@ -171,15 +175,102 @@ export default function MapLogic({
   const selectedFeature =
     features.find((f) => f.id === selectedFeatureId) ?? localSelectedFeature;
 
-  /* ---------------- RENDER ---------------- */
+  /* ---------------- Delete Selection ---------------- */
 
+  function deleteSelectedFeatures() {
+    selectedFeatureIds.forEach((id) => {
+      deleteFeature(id);
+    });
+
+    clearSelection();
+    setLocalSelectedFeature(null);
+    setIsFormOpen(false);
+  }
+
+  /*------------------Selection Status------------------*/
+  function updateSelectedStatus(
+    status: "Nieuw" | "In uitvoering" | "Afgerond",
+  ) {
+    selectedFeatureIds.forEach((id) => {
+      const feature = features.find((f) => f.id === id);
+
+      if (!feature) return;
+      if (feature.layerId === "neighborhoods") return;
+
+      updateFeature({
+        ...feature,
+        properties: {
+          ...feature.properties,
+          ui: {
+            ...feature.properties.ui!,
+            status,
+          },
+        },
+        updatedAt: new Date().toISOString(),
+      });
+    });
+
+    clearSelection();
+    setLocalSelectedFeature(null);
+    setIsFormOpen(false);
+  }
   return (
     <>
+      {selectedFeatureIds.length > 1 && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-white shadow-lg rounded px-4 py-2 text-sm flex items-center gap-3">
+          <span>{selectedFeatureIds.length} features selected</span>
+
+          <button
+            onClick={() => {
+              clearSelection();
+              setIsFormOpen(false);
+              setLocalSelectedFeature(null);
+            }}
+            className="text-blue-600 hover:underline"
+          >
+            Clear
+          </button>
+
+          <button
+            onClick={deleteSelectedFeatures}
+            className="text-red-600 hover:underline"
+          >
+            Delete selected
+          </button>
+          <button
+            onClick={() => updateSelectedStatus("In uitvoering")}
+            className="text-orange-600 hover:underline"
+          >
+            Set in uitvoering
+          </button>
+
+          <button
+            onClick={() => updateSelectedStatus("Afgerond")}
+            className="text-green-600 hover:underline"
+          >
+            Set afgerond
+          </button>
+        </div>
+      )}
       <FeatureLayer
         features={features}
-        onFeatureClick={(feature) => {
+        onFeatureClick={(feature, event) => {
           if (feature.layerId === "neighborhoods") {
-            console.log("Neighborhood clicked:", feature.properties.name);
+            setIsFormOpen(false);
+            return;
+          }
+
+          const isMultiSelect =
+            event.originalEvent.ctrlKey || event.originalEvent.metaKey;
+
+          if (isMultiSelect) {
+            if (selectedFeatureIds.includes(feature.id)) {
+              removeSelectedFeatureId(feature.id);
+            } else {
+              addSelectedFeatureId(feature.id);
+            }
+
+            setLocalSelectedFeature(feature);
             setIsFormOpen(false);
             return;
           }

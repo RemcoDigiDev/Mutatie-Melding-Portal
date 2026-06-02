@@ -28,7 +28,7 @@ export async function loadNeighborhoodFeatures(): Promise<GISFeature[]> {
     wijk: feature.properties?.wk_naam ?? "",
     gemeente: feature.properties?.gm_naam ?? "",
     assignedUser: null,
-    status: "Niet toegewezen",
+    assignmentStatus: "Niet toegewezen",
   },
   createdAt: now,
   updatedAt: now,

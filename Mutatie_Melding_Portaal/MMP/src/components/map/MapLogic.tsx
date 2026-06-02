@@ -8,7 +8,6 @@ import FeatureForm from "../../components/forms/FeatureForm";
 
 import type { GISFeature } from "../../types/feature";
 import type { DrawingMode } from "../../types/drawing";
-import { useDrawHandler } from "../../hooks/useDrawHandler";
 
 import { reverseGeocode } from "../../utils/reverseGeocode";
 import { useGISStore } from "../../store/useGISStore";
@@ -51,6 +50,8 @@ type Props = {
   onMapClick: (lat: number, lng: number) => void;
 };
 
+/* ---------------- COMPONENT ---------------- */
+
 export default function MapLogic({
   features,
   addFeature,
@@ -65,7 +66,45 @@ export default function MapLogic({
 
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  /* ---------------- DRAW HANDLER (IMPORTANT: INSIDE COMPONENT) ---------------- */
+  // Important fallback:
+  // after addFeature(), React may not immediately update the features prop.
+  // This keeps the newly created feature available for FeatureForm.
+  const [localSelectedFeature, setLocalSelectedFeature] =
+    useState<GISFeature | null>(null);
+
+  /* ---------------- GEOMETRY CENTER ---------------- */
+
+  function getGeometryCenter(feature: GISFeature): [number, number] {
+    const geom = feature.geometry;
+
+    if (geom.type === "Point") {
+      return geom.coordinates as [number, number];
+    }
+
+    if (geom.type === "LineString") {
+      const coords = geom.coordinates as [number, number][];
+      const mid = Math.floor(coords.length / 2);
+      return coords[mid];
+    }
+
+    if (geom.type === "Polygon") {
+      const coords = geom.coordinates[0] as [number, number][];
+
+      let lngSum = 0;
+      let latSum = 0;
+
+      coords.forEach(([lng, lat]) => {
+        lngSum += lng;
+        latSum += lat;
+      });
+
+      return [lngSum / coords.length, latSum / coords.length];
+    }
+
+    return [0, 0];
+  }
+
+  /* ---------------- CREATE FEATURE ---------------- */
 
   const handleCreate = async (feature: GISFeature) => {
     let detectedAddress = "Adres niet gevonden";
@@ -76,104 +115,78 @@ export default function MapLogic({
 
     const [lng, lat] = getGeometryCenter(feature);
 
-    const location = await reverseGeocode(lat, lng);
+    let location: Awaited<ReturnType<typeof reverseGeocode>> | null = null;
 
-    detectedAddress = location.address;
-    postcode = location.postcode;
-    buurt = location.buurt;
-    wijk = location.wijk;
-    gemeente = location.gemeente;
+    try {
+      location = await reverseGeocode(lat, lng);
+    } catch (error) {
+      console.error("Reverse geocode failed:", error);
+    }
+
+    detectedAddress = location?.address ?? "Adres niet gevonden";
+    postcode = location?.postcode ?? "";
+    buurt = location?.buurt ?? "";
+    wijk = location?.wijk ?? "";
+    gemeente = location?.gemeente ?? "";
+
+    const today = new Date().toLocaleDateString("nl-NL");
 
     const updatedFeature: GISFeature = {
       ...feature,
       properties: {
         ...feature.properties,
+
         address: detectedAddress,
+        date: today,
+
         ui: {
-          ...(feature.properties.ui ?? {
-            title: "",
-            description: "",
-            status: "Nieuw",
-            priority: "Medium",
-            category: "Melding",
-            user: "Digireg1",
-          }),
+          title: "",
+          description: "",
+          status: "Nieuw",
+          priority: "Medium",
+          category: "Melding",
+
           address: detectedAddress,
+          date: today,
+          user: "Digireg1",
+
           postcode,
           buurt,
           wijk,
           gemeente,
-          date: new Date().toLocaleDateString("nl-NL"),
-          user: "Digireg1",
         },
       },
+      updatedAt: new Date().toISOString(),
     };
 
     addFeature(updatedFeature);
-    setSelectedFeatureId(updatedFeature.id as string);
+    setSelectedFeatureId(updatedFeature.id);
+    setLocalSelectedFeature(updatedFeature);
     setIsFormOpen(true);
     setDrawingMode(null);
   };
 
-  useDrawHandler({
-    drawingMode,
-    onCreate: handleCreate,
-  });
+  /* ---------------- SELECTED FEATURE ---------------- */
 
-  function getGeometryCenter(feature: GISFeature): [number, number] {
-    const geom = feature.geometry;
-
-    // POINT
-    if (geom.type === "Point") {
-      return geom.coordinates as [number, number];
-    }
-
-    // LINESTRING → midpoint
-    if (geom.type === "LineString") {
-      const coords = geom.coordinates as [number, number][];
-      const mid = Math.floor(coords.length / 2);
-      return coords[mid];
-    }
-
-    // POLYGON → centroid approximation (simple average)
-    if (geom.type === "Polygon") {
-      const coords = geom.coordinates[0] as [number, number][];
-
-      let latSum = 0;
-      let lngSum = 0;
-
-      coords.forEach(([lng, lat]) => {
-        lngSum += lng;
-        latSum += lat;
-      });
-
-      return [lngSum / coords.length, latSum / coords.length];
-    }
-
-    // fallback
-    return [0, 0];
-  }
   const selectedFeature =
-    features.find((f) => f.id === selectedFeatureId) ?? null;
+    features.find((f) => f.id === selectedFeatureId) ?? localSelectedFeature;
+
+  /* ---------------- RENDER ---------------- */
 
   return (
     <>
       <FeatureLayer
         features={features}
         onFeatureClick={(feature) => {
-          setSelectedFeatureId(feature.id as string);
-
-          if (feature.layerId === "drawings") {
-            setIsFormOpen(true);
-          }
-
           if (feature.layerId === "neighborhoods") {
-            console.log(
-              "Clicked neighborhood:",
-              (feature.properties as any).name,
-            );
+            console.log("Neighborhood clicked:", feature.properties.name);
             setIsFormOpen(false);
+            return;
           }
+
+          setSelectedFeatureId(feature.id);
+          setLocalSelectedFeature(feature);
+          setIsFormOpen(true);
         }}
       />
 
@@ -187,11 +200,13 @@ export default function MapLogic({
         onClose={() => setIsFormOpen(false)}
         onSave={(updated) => {
           updateFeature(updated);
-          setSelectedFeatureId(updated.id as string);
+          setSelectedFeatureId(updated.id);
+          setLocalSelectedFeature(updated);
         }}
         onDelete={(id) => {
           deleteFeature(id);
           setSelectedFeatureId(null);
+          setLocalSelectedFeature(null);
           setIsFormOpen(false);
         }}
       />

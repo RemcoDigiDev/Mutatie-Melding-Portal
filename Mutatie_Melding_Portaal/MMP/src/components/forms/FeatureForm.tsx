@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { GISFeature } from "../../types/feature";
+import { createPortal } from "react-dom";
 
 /* ---------------- PROPS ---------------- */
 type Props = {
@@ -72,11 +73,11 @@ export default function FeatureForm({
       priority:
         ui?.priority === "Low"
           ? "Laag"
-          : ui?.priority === "Medium"
-            ? "Normaal"
-            : ui?.priority === "High"
-              ? "Hoog"
-              : "Kritisch",
+          : ui?.priority === "High"
+            ? "Hoog"
+            : ui?.priority === "Critical"
+              ? "Kritisch"
+              : "Normaal",
 
       category: ui?.category ?? "Melding",
 
@@ -95,7 +96,7 @@ export default function FeatureForm({
     });
   }, [feature?.id]);
 
-  if (!isOpen || !feature) return null;
+  if (!feature) return null;
 
   /* ---------------- UPDATE ---------------- */
   const update = <K extends keyof FeatureFormState>(
@@ -194,12 +195,17 @@ export default function FeatureForm({
     }`;
 
   /* ---------------- UI ---------------- */
-  return (
-    <div className="absolute right-0 top-0 h-full w-96 bg-white shadow-2xl z-[2000] flex flex-col">
+  if (!feature) return null;
+
+  return createPortal(
+    <div
+      className={`fixed top-0 right-0 h-screen w-[420px] bg-white shadow-2xl z-[9999]
+    transform transition-transform duration-300 ease-in-out flex flex-col
+    ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+    >
       {/* HEADER */}
       <div className="p-4 border-b flex justify-between">
         <h2 className="font-bold text-lg">Melding</h2>
-        {/* <button onClick={onClose}>✕</button> */}
       </div>
 
       {/* BODY */}
@@ -399,6 +405,7 @@ export default function FeatureForm({
           Save
         </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

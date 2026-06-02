@@ -123,10 +123,21 @@ function getValidFeatures(features: GISFeature[]): GISFeature[] {
 
 /* ---------------- COMPONENT ---------------- */
 export default function FeatureLayer({ features, onFeatureClick }: Props) {
+  const layerOrder = {
+    neighborhoods: 1,
+    drawings: 10,
+  };
+
   const layers = useGISStore((s) => s.layers);
-  const validFeatures = getValidFeatures(features).filter((feature) => {
-    return layers[feature.layerId]?.visible ?? true;
-  });
+  const validFeatures = getValidFeatures(features)
+    .filter((feature) => {
+      return layers[feature.layerId]?.visible ?? true;
+    })
+    .sort(
+      (a, b) =>
+        (layerOrder[a.layerId as keyof typeof layerOrder] ?? 5) -
+        (layerOrder[b.layerId as keyof typeof layerOrder] ?? 5),
+    );
 
   return (
     <>
@@ -136,6 +147,7 @@ export default function FeatureLayer({ features, onFeatureClick }: Props) {
             pane="featurePane"
             key={feature.id}
             data={toGeoJSONFeature(feature)}
+            interactive={feature.layerId !== "neighborhoods"}
             /* POINTS */
             pointToLayer={(_geoJson, latlng) => {
               const style = getFeatureStyle(feature);

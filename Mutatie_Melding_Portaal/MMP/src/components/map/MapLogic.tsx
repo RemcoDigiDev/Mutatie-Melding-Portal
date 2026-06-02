@@ -37,52 +37,6 @@ function MapClickHandler({
   return null;
 }
 
-/* ---------------- SCALE BAR ---------------- */
-
-function CustomScaleBar() {
-  const map = useMap();
-  const [meters, setMeters] = useState(0);
-
-  useEffect(() => {
-    const update = () => {
-      const bounds = map.getBounds();
-      const centerLat = map.getCenter().lat;
-
-      const left = map.latLngToContainerPoint(
-        L.latLng(centerLat, bounds.getWest()),
-      );
-
-      const right = map.latLngToContainerPoint(
-        L.latLng(centerLat, bounds.getEast()),
-      );
-
-      const pixels = right.x - left.x;
-
-      const metersPerPixel = map
-        .containerPointToLatLng([0, 0])
-        .distanceTo(map.containerPointToLatLng([1, 0]));
-
-      setMeters(metersPerPixel * pixels);
-    };
-
-    update();
-    map.on("zoom move", update);
-
-    return () => {
-      map.off("zoom move", update);
-    };
-  }, [map]);
-
-  const format = (m: number) =>
-    m >= 1000 ? `${(m / 1000).toFixed(0)} km` : `${Math.round(m)} m`;
-
-  return (
-    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[1000] bg-white px-3 py-1 rounded shadow text-xs font-medium">
-      0 — {format(meters)}
-    </div>
-  );
-}
-
 /* ---------------- PROPS ---------------- */
 
 type Props = {
@@ -243,7 +197,6 @@ export default function MapLogic({
       />
 
       <MapClickHandler onMapClick={onMapClick} />
-      <CustomScaleBar />
     </>
   );
 }

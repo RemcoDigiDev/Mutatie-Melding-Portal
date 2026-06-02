@@ -32,9 +32,9 @@ function getPriorityColor(priority: GISPriority): string {
 function getFeatureStyle(feature: GISFeature) {
   if (feature.layerId === "neighborhoods") {
     return {
-      color: "#7c3aed",
+      color: "#ed3a3a",
       weight: 2,
-      fillColor: "#a78bfa",
+      fillColor: "#ffffff00",
       fillOpacity: 0.15,
     };
   }
@@ -133,6 +133,7 @@ export default function FeatureLayer({ features, onFeatureClick }: Props) {
       {validFeatures.map((feature) => {
         return (
           <GeoJSON
+            pane="featurePane"
             key={feature.id}
             data={toGeoJSONFeature(feature)}
             /* POINTS */

@@ -8,7 +8,7 @@ export type Priority = "Low" | "Medium" | "High" | "Critical";
 export type FeatureUI = {
   title: string;
   description: string;
-  status: "Nieuw" | "In uitvoering" | "Afgerond";
+  status: "Nieuw" | "In uitvoering" | "Batch Inleveren";
   priority: Priority;
   category: string;
 
@@ -31,7 +31,7 @@ export interface FeatureProperties {
   gemeente?: string;
 
   assignedUser?: string | null;
-  assignmentStatus?: "Niet toegewezen" | "Toegewezen" | "In behandeling" | "Afgerond";
+  assignmentStatus?: "Niet toegewezen" | "Toegewezen" | "In behandeling" | "Batch Inleveren";
 
   status?: string;
   melder?: string;
@@ -43,7 +43,7 @@ export interface FeatureProperties {
 ui?: {
   title: string;
   description: string;
-  status: "Nieuw" | "In uitvoering" | "Afgerond";
+  status: "Nieuw" | "In uitvoering" | "Batch Inleveren";
   priority: "Low" | "Medium" | "High" | "Critical";
   category: string;
 

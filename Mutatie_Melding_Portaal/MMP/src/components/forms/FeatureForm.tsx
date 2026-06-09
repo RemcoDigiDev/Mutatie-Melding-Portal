@@ -16,7 +16,7 @@ type FeatureFormState = {
   title: string;
   description: string;
 
-  status: "Nieuw" | "In uitvoering" | "Afgerond";
+  status: "Nieuw" | "In uitvoering" | "Batch Inleveren";
   priority: "Laag" | "Normaal" | "Hoog" | "Kritisch";
   category: string;
 

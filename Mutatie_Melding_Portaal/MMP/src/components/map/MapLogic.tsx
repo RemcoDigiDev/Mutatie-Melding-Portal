@@ -189,7 +189,7 @@ export default function MapLogic({
 
   /*------------------Selection Status------------------*/
   function updateSelectedStatus(
-    status: "Nieuw" | "In uitvoering" | "Afgerond",
+    status: "Nieuw" | "In uitvoering" | "Batch Inleveren",
   ) {
     selectedFeatureIds.forEach((id) => {
       const feature = features.find((f) => f.id === id);
@@ -245,10 +245,10 @@ export default function MapLogic({
           </button>
 
           <button
-            onClick={() => updateSelectedStatus("Afgerond")}
+            onClick={() => updateSelectedStatus("Batch Inleveren")}
             className="text-green-600 hover:underline"
           >
-            Set afgerond
+            Batch Inleveren
           </button>
         </div>
       )}
